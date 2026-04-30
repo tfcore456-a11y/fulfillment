@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="th">
 <head>
@@ -339,12 +340,10 @@ textarea{resize:vertical;min-height:70px}
         </select>
       </div>
       <div class="form-group">
-        <label class="lbl">สถานะ</label>
+        <label class="lbl">สถานะวิดีโอ</label>
         <select id="ret-status">
-          <option value="รอรับสินค้า">รอรับสินค้า</option>
-          <option value="รับสินค้าแล้ว">รับสินค้าแล้ว</option>
-          <option value="ตรวจสอบแล้ว">ตรวจสอบแล้ว</option>
-          <option value="ดำเนินการแล้ว">ดำเนินการแล้ว</option>
+          <option value="บันทึกภาพวิดีโอแล้ว">บันทึกภาพวิดีโอแล้ว</option>
+          <option value="ยังไม่ได้บันทึกวิดีโอ">ยังไม่ได้บันทึกวิดีโอ</option>
         </select>
       </div>
     </div>
@@ -353,14 +352,7 @@ textarea{resize:vertical;min-height:70px}
         <textarea id="ret-note" placeholder="เช่น สภาพสินค้า, รายการสินค้าในพัสดุ, ขั้นตอนที่ต้องทำต่อ..." style="min-height:70px"></textarea>
       </div>
     </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label class="lbl">แท็ก (Tag)</label>
-        <div class="tag-input-wrap" id="ret-tags-wrap" onclick="document.getElementById('ret-tag-input').focus()">
-          <input id="ret-tag-input" class="tag-bare-input" placeholder="พิมพ์แล้วกด Enter เช่น ชำรุด, COD, คืนร้านค้า" onkeydown="handleTagInput(event,'ret-tags-wrap','ret-tag-input')">
-        </div>
-        <div style="font-size:11px;color:#bbb;margin-top:4px">กด Enter หรือ , เพื่อเพิ่มแท็ก</div>
-      </div>
+    <div class="form-row one">
       <div class="form-group">
         <label class="lbl">วันที่รับกลับคลัง</label>
         <input id="ret-arrived-date" type="date">
@@ -381,12 +373,10 @@ textarea{resize:vertical;min-height:70px}
       <span class="card-title" style="margin-bottom:0">รายการสินค้าตีกลับทั้งหมด</span>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <input type="text" id="ret-search" placeholder="ค้นหา Tracking / ร้านค้า..." style="width:180px" oninput="renderReturns()">
-        <select id="ret-filter-status" style="width:150px" onchange="renderReturns()">
+        <select id="ret-filter-status" style="width:180px" onchange="renderReturns()">
           <option value="">ทุกสถานะ</option>
-          <option>รอรับสินค้า</option>
-          <option>รับสินค้าแล้ว</option>
-          <option>ตรวจสอบแล้ว</option>
-          <option>ดำเนินการแล้ว</option>
+          <option>บันทึกภาพวิดีโอแล้ว</option>
+          <option>ยังไม่ได้บันทึกวิดีโอ</option>
         </select>
       </div>
     </div>
@@ -413,6 +403,7 @@ textarea{resize:vertical;min-height:70px}
       <div class="modal-section">
         <div class="modal-section-title">ข้อมูลทั่วไป</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+          <div class="form-group"><label class="lbl">เลขออเดอร์</label><input id="ret-edit-order" placeholder="เช่น ORD-20240001"></div>
           <div class="form-group"><label class="lbl">เลข Tracking</label><input id="ret-edit-tracking"></div>
           <div class="form-group"><label class="lbl">ร้านค้า</label><input id="ret-edit-shop"></div>
           <div class="form-group"><label class="lbl">ขนส่ง</label>
@@ -430,22 +421,16 @@ textarea{resize:vertical;min-height:70px}
             </select>
           </div>
         </div>
-        <div class="form-group" style="margin-bottom:10px"><label class="lbl">สถานะ</label>
+        <div class="form-group" style="margin-bottom:10px"><label class="lbl">สถานะวิดีโอ</label>
           <select id="ret-edit-status" style="width:auto;border-radius:var(--rpill)">
-            <option>รอรับสินค้า</option><option>รับสินค้าแล้ว</option>
-            <option>ตรวจสอบแล้ว</option><option>ดำเนินการแล้ว</option>
+            <option>บันทึกภาพวิดีโอแล้ว</option>
+            <option>ยังไม่ได้บันทึกวิดีโอ</option>
           </select>
         </div>
         <div class="form-group" style="margin-bottom:12px"><label class="lbl">รายละเอียด / หมายเหตุ</label>
           <textarea id="ret-edit-note" style="min-height:70px"></textarea>
         </div>
-        <div class="form-row" style="margin-bottom:10px">
-          <div class="form-group">
-            <label class="lbl">แท็ก (Tag)</label>
-            <div class="tag-input-wrap" id="ret-edit-tags-wrap" onclick="document.getElementById('ret-edit-tag-input').focus()">
-              <input id="ret-edit-tag-input" class="tag-bare-input" placeholder="พิมพ์แล้วกด Enter..." onkeydown="handleTagInput(event,'ret-edit-tags-wrap','ret-edit-tag-input')">
-            </div>
-          </div>
+        <div class="form-row one" style="margin-bottom:10px">
           <div class="form-group">
             <label class="lbl">วันที่รับกลับคลัง</label>
             <input id="ret-edit-arrived-date" type="date">
@@ -628,6 +613,23 @@ let tasks=[], currentTaskId=null, trackingList=[];
 let codeReader=null, cameraStream=null;
 const KNOWN_CARRIERS = ['Flash','J&T','Kerry','LEX','Shopee','ไปรษณีย์ไทย','Grab'];
 
+
+// ── GOOGLE SHEETS SYNC ───────────────────────────────────
+const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbxqmZERLkLluhCisHrNS4ySQRFLJcQ8sZSvjzLvpjI30s-k-iCskvfWByGjRErDrCEG/exec';
+
+async function syncToSheets(type, data) {
+  try {
+    await fetch(SHEETS_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type, data })
+    });
+  } catch(e) {
+    console.warn('Sheets sync failed:', e);
+  }
+}
+
 // ── HELPERS ──────────────────────────────────────────────
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200)}
 function today(){return new Date().toISOString().slice(0,10)}
@@ -676,7 +678,9 @@ async function addTask(){
   const shop=document.getElementById('t-shop').value.trim();
   const title=document.getElementById('t-title').value.trim();
   if(!shop||!title){toast('กรุณากรอกชื่อร้านและหัวข้องาน');return}
-  await sb.from('tasks').insert({shop_name:shop,title,detail:document.getElementById('t-detail').value.trim(),assigned_to:document.getElementById('t-assign').value.trim(),priority:document.getElementById('t-priority').value,status:'รอดำเนินการ'});
+  const taskData = {shop_name:shop,title,detail:document.getElementById('t-detail').value.trim(),assigned_to:document.getElementById('t-assign').value.trim(),priority:document.getElementById('t-priority').value,status:'รอดำเนินการ'};
+  await sb.from('tasks').insert(taskData);
+  syncToSheets('task', taskData);
   ['t-shop','t-title','t-detail','t-assign'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('t-priority').value='ปกติ';
   toast('สร้างงานแล้ว ✓');
@@ -907,6 +911,7 @@ async function saveAndPrint(){
   const{data:session,error}=await sb.from('outbound_sessions').insert({shop_name:shop,carrier,session_date:date,total_parcels:trackingList.length}).select().single();
   if(error){toast('เกิดข้อผิดพลาด: '+error.message);return}
   await sb.from('outbound_items').insert(trackingList.map(t=>({session_id:session.id,tracking_number:t})));
+  syncToSheets('outbound', {shop, carrier, date, trackings: [...trackingList]});
   toast('บันทึกแล้ว ✓');
   const win=window.open('','_blank','width=700,height=900');
   win.document.write(`<html><head><title>The Fulfillment — ใบส่งสินค้า</title>
@@ -1234,10 +1239,8 @@ function showPage(id, btn) {
 }
 
 function retStatusClass(s) {
-  if (s === 'รอรับสินค้า') return 'sts-return-wait';
-  if (s === 'รับสินค้าแล้ว') return 'sts-return-recv';
-  if (s === 'ตรวจสอบแล้ว') return 'sts-return-check';
-  if (s === 'ดำเนินการแล้ว') return 'sts-return-done';
+  if (s === 'บันทึกภาพวิดีโอแล้ว') return 'sts-return-done';
+  if (s === 'ยังไม่ได้บันทึกวิดีโอ') return 'sts-return-wait';
   return 'sts-return-wait';
 }
 
@@ -1312,17 +1315,18 @@ async function addReturn() {
   const status = document.getElementById('ret-status').value;
   const note = document.getElementById('ret-note').value.trim();
   const videoUrl = document.getElementById('ret-video-url').value.trim();
-  const tags = getTagsFromWrap('ret-tags-wrap');
+  const orderNum = document.getElementById('ret-order').value.trim();
   const arrivedDate = document.getElementById('ret-arrived-date').value || today();
   if (!tracking || !shop) { toast('กรุณากรอกเลข Tracking และร้านค้า'); return; }
-  const { error } = await sb.from('returns').insert({
-    tracking_number: tracking, shop_name: shop, carrier, reason, status, note,
-    video_url: videoUrl || null, tags: tags, arrived_date: arrivedDate
-  });
+  const returnData = {
+    order_number: orderNum || null, tracking_number: tracking, shop_name: shop, carrier, reason, status, note,
+    video_url: videoUrl || null, arrived_date: arrivedDate
+  };
+  const { error } = await sb.from('returns').insert(returnData);
   if (error) { toast('เกิดข้อผิดพลาด: ' + error.message); return; }
-  ['ret-tracking','ret-shop','ret-note','ret-video-url'].forEach(id => document.getElementById(id).value = '');
-  setTagsToWrap('ret-tags-wrap','ret-tag-input',[]);
-  document.getElementById('ret-status').value = 'รอรับสินค้า';
+  syncToSheets('return', returnData);
+  ['ret-order','ret-tracking','ret-shop','ret-note','ret-video-url'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('ret-status').value = 'บันทึกภาพวิดีโอแล้ว';
   document.getElementById('ret-arrived-date').value = today();
   toast('บันทึกสินค้าตีกลับแล้ว ✓');
   renderReturns(); renderRetMetrics(); updateReturnBadge();
@@ -1343,7 +1347,7 @@ async function renderReturns() {
     <div class="ret-card" onclick="openReturn('${r.id}')">
       <div class="ret-card-header">
         <div>
-          <div class="ret-card-num">${r.tracking_number}</div>
+          <div class="ret-card-num">${r.tracking_number}${r.order_number ? ' <span style="font-size:12px;color:var(--gold3);font-weight:400">· '+r.order_number+'</span>' : ''}</div>
           <div class="ret-card-meta">
             ${carrierPill(r.carrier)}
             <span>${r.shop_name}</span>
@@ -1354,7 +1358,7 @@ async function renderReturns() {
         <span class="sts ${retStatusClass(r.status)}">${r.status}</span>
       </div>
       ${r.note ? `<div class="ret-card-body">${r.note}</div>` : ''}
-      ${(r.tags && r.tags.length) ? `<div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:8px">${r.tags.map(t=>`<span class="tag-pill">${t}</span>`).join('')}</div>` : ''}
+
       ${r.video_url ? videoHtml(r.video_url) : ''}
       <div class="ret-card-footer" style="margin-top:8px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
         ${r.arrived_date ? `<span style="font-size:11px;color:var(--gold3);font-weight:500">📅 รับกลับคลัง: ${fmtDate(r.arrived_date)}</span>` : ''}
@@ -1391,6 +1395,7 @@ async function openReturn(id) {
   if (!data) return;
   document.getElementById('ret-modal-title').textContent = data.tracking_number;
   document.getElementById('ret-modal-sub').textContent = data.shop_name + ' · ' + data.carrier;
+  document.getElementById('ret-edit-order').value = data.order_number || '';
   document.getElementById('ret-edit-tracking').value = data.tracking_number;
   document.getElementById('ret-edit-shop').value = data.shop_name || '';
   document.getElementById('ret-edit-carrier').value = data.carrier || 'Flash';
@@ -1399,7 +1404,6 @@ async function openReturn(id) {
   document.getElementById('ret-edit-note').value = data.note || '';
   document.getElementById('ret-edit-video').value = data.video_url || '';
   document.getElementById('ret-edit-arrived-date').value = data.arrived_date || today();
-  setTagsToWrap('ret-edit-tags-wrap','ret-edit-tag-input', data.tags || []);
   // show video preview
   const prev = document.getElementById('ret-video-preview');
   prev.innerHTML = data.video_url ? videoHtml(data.video_url) : '';
@@ -1423,7 +1427,7 @@ async function saveReturnEdit() {
     status: document.getElementById('ret-edit-status').value,
     note: document.getElementById('ret-edit-note').value.trim(),
     video_url: document.getElementById('ret-edit-video').value.trim() || null,
-    tags: getTagsFromWrap('ret-edit-tags-wrap'),
+    order_number: document.getElementById('ret-edit-order').value.trim() || null,
     arrived_date: document.getElementById('ret-edit-arrived-date').value || today(),
   }).eq('id', currentReturnId);
   if (error) { toast('เกิดข้อผิดพลาด'); return; }
