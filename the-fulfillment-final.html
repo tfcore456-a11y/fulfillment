@@ -1,0 +1,1478 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Fulfillment</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.19.1/umd/index.min.js"></script>
+<style>
+:root {
+  --navy:#1E2E4A; --navy2:#162338; --gold:#B8A07A; --gold2:#CBB896; --gold3:#9E8660;
+  --gold-light:#F0E8D8; --cream:#F5F2ED; --cream2:#EDE8E0; --white:#FFFFFF;
+  --green-bg:#E8F5EE; --green-t:#1A6640; --amber-bg:#FFF8E6; --amber-t:#A07820;
+  --blue-bg:#E8F0FB; --blue-t:#1E3A6E; --red-bg:#FFF0F0; --red-t:#C0392B;
+  --shadow:0 2px 12px rgba(30,46,74,0.08); --shadow-lg:0 8px 32px rgba(30,46,74,0.14);
+  --r:14px; --rsm:8px; --rpill:99px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--navy);min-height:100vh}
+
+nav{background:var(--navy);height:58px;display:flex;align-items:center;padding:0 20px;gap:4px;position:sticky;top:0;z-index:100;border-bottom:1px solid rgba(184,160,122,.15);box-shadow:0 2px 20px rgba(0,0,0,.15)}
+.brand{font-family:'Playfair Display',serif;font-size:16px;font-weight:700;color:var(--gold2);letter-spacing:.03em;margin-right:20px;white-space:nowrap;flex-shrink:0}
+.brand small{display:block;font-family:'DM Sans',sans-serif;font-size:9px;font-weight:300;color:rgba(203,184,150,.5);letter-spacing:.14em;text-transform:uppercase;line-height:1;margin-top:1px}
+.nav-btn{background:none;border:none;padding:7px 13px;border-radius:var(--rsm);cursor:pointer;font-size:13px;font-weight:400;font-family:'DM Sans',sans-serif;color:rgba(203,184,150,.55);transition:all .18s;white-space:nowrap}
+.nav-btn:hover{background:rgba(255,255,255,.06);color:var(--gold2)}
+.nav-btn.active{background:rgba(184,160,122,.18);color:var(--gold2);font-weight:500}
+.nav-badge{display:inline-flex;align-items:center;justify-content:center;background:var(--red-t);color:white;font-size:10px;font-weight:600;width:16px;height:16px;border-radius:50%;margin-left:4px;vertical-align:middle}
+.rdot{width:7px;height:7px;background:#4CAF50;border-radius:50%;margin-left:auto;box-shadow:0 0 6px #4CAF50;animation:pd 2s infinite;flex-shrink:0}
+@keyframes pd{0%,100%{opacity:1}50%{opacity:.4}}
+
+main{max-width:900px;margin:0 auto;padding:20px 16px}
+.page{display:none}.page.active{display:block}
+
+.card{background:var(--white);border:1px solid var(--cream2);border-radius:var(--r);padding:18px;margin-bottom:14px;box-shadow:var(--shadow)}
+.card-title{font-family:'Playfair Display',serif;font-size:15px;font-weight:600;color:var(--navy);margin-bottom:14px}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:14px}
+.metric{background:var(--navy);border-radius:var(--r);padding:14px 16px;position:relative;overflow:hidden}
+.metric::before{content:'';position:absolute;top:-20px;right:-20px;width:60px;height:60px;background:rgba(184,160,122,.08);border-radius:50%}
+.metric-icon{font-size:18px;margin-bottom:6px}
+.metric-label{font-size:10px;color:rgba(203,184,150,.6);letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px}
+.metric-value{font-family:'Playfair Display',serif;font-size:26px;font-weight:600;color:var(--gold2)}
+.metric-sub{font-size:10px;color:rgba(184,160,122,.4);margin-top:2px}
+
+.badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:500;padding:3px 9px;border-radius:var(--rpill)}
+.badge-wait{background:var(--amber-bg);color:var(--amber-t);border:1px solid #e8d48a}
+.badge-doing{background:var(--blue-bg);color:var(--blue-t);border:1px solid #b0c4e8}
+.badge-done{background:var(--green-bg);color:var(--green-t);border:1px solid #90d4b0}
+.dot{width:6px;height:6px;border-radius:50%;display:inline-block}
+.dot-wait{background:#c49a20}.dot-doing{background:#3060b0}.dot-done{background:#20864a}
+
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{text-align:left;padding:9px 12px;color:var(--navy);font-weight:500;border-bottom:1px solid var(--cream2);font-size:10px;letter-spacing:.06em;text-transform:uppercase;background:var(--cream)}
+.tbl td{padding:10px 12px;border-bottom:1px solid var(--cream2);color:var(--navy);vertical-align:middle}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tbody tr:hover td{background:var(--cream)}
+.tbl-done td{opacity:.5;text-decoration:line-through}
+
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.form-row.one{grid-template-columns:1fr}
+.form-row.three{grid-template-columns:1fr 1fr 1fr}
+.form-group{display:flex;flex-direction:column;gap:5px}
+.lbl{font-size:11px;font-weight:500;color:var(--navy);letter-spacing:.04em;text-transform:uppercase}
+input,select,textarea{font-size:13px;padding:9px 12px;border-radius:var(--rsm);border:1px solid var(--cream2);background:var(--cream);color:var(--navy);font-family:'DM Sans',sans-serif;width:100%;transition:border-color .15s,background .15s}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold);background:var(--white)}
+textarea{resize:vertical;min-height:70px}
+
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:var(--rsm);border:1px solid var(--cream2);background:var(--white);color:var(--navy);font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .15s;font-weight:500;white-space:nowrap}
+.btn:hover{border-color:var(--gold);background:var(--cream)}
+.btn:active{transform:scale(.98)}
+.btn-primary{background:var(--navy);color:var(--gold2);border-color:var(--navy)}
+.btn-primary:hover{background:var(--navy2);color:var(--gold2)}
+.btn-gold{background:var(--gold);color:white;border-color:var(--gold)}
+.btn-gold:hover{background:var(--gold3)}
+.btn-danger{background:var(--red-bg);color:var(--red-t);border-color:#f5b8b8}
+.btn-danger:hover{background:#ffe0e0}
+.btn-sm{padding:5px 11px;font-size:12px}
+.btn-camera{background:var(--navy);color:var(--gold2);border-color:var(--navy);font-size:22px;padding:8px 14px}
+.btn-camera:hover{background:var(--navy2);color:var(--gold2)}
+
+.status-select{font-size:12px;padding:4px 8px;border-radius:var(--rpill);border:1px solid var(--cream2);background:var(--cream);color:var(--navy);cursor:pointer;width:auto;font-family:'DM Sans',sans-serif}
+
+.carrier{display:inline-block;padding:3px 10px;border-radius:var(--rpill);font-size:11px;font-weight:500}
+.c-flash{background:#FFF3E0;color:#B85C00;border:1px solid #f5c580}
+.c-jt{background:var(--green-bg);color:var(--green-t);border:1px solid #90d0a0}
+.c-kerry{background:var(--blue-bg);color:var(--blue-t);border:1px solid #90b8e8}
+.c-lex{background:#FFF0F8;color:#C2185B;border:1px solid #F48FB1}
+.c-shopee{background:#FFF3E0;color:#E65100;border:1px solid #FFCC80}
+.c-thaipost{background:#F3E8FF;color:#6B21A8;border:1px solid #D8B4FE}
+.c-other{background:var(--cream);color:#666;border:1px solid var(--cream2)}
+
+.scan-zone{background:var(--navy);border-radius:var(--r);padding:20px;margin-bottom:14px;border:2px dashed rgba(184,160,122,.25)}
+.scan-label{font-size:11px;color:rgba(203,184,150,.6);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px}
+.scan-row{display:flex;gap:10px;align-items:center}
+.scan-input{flex:1;background:rgba(255,255,255,.08)!important;border:1px solid rgba(184,160,122,.3)!important;color:var(--gold2)!important;font-size:15px!important;letter-spacing:.04em}
+.scan-input::placeholder{color:rgba(203,184,150,.4)}
+.scan-input:focus{border-color:var(--gold)!important;background:rgba(255,255,255,.12)!important}
+
+.tracking-item{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;padding:10px 12px;background:var(--cream);border-radius:var(--rsm);border:1px solid var(--cream2);margin-bottom:6px}
+.tracking-num{font-size:13px;font-weight:500;color:var(--navy);letter-spacing:.03em;word-break:break-all}
+
+.kanban{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.k-col{background:var(--cream);border-radius:var(--r);padding:12px}
+.k-head{font-size:11px;font-weight:500;color:var(--navy);letter-spacing:.05em;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between}
+.k-count{background:var(--white);border-radius:var(--rpill);padding:2px 8px;font-size:11px}
+.k-card{background:var(--white);border:1px solid var(--cream2);border-radius:var(--rsm);padding:10px 11px;margin-bottom:7px;cursor:pointer;transition:box-shadow .15s}
+.k-card:hover{box-shadow:var(--shadow)}
+.k-name{font-size:12px;font-weight:500;color:var(--navy);margin-bottom:3px}
+.k-meta{font-size:11px;color:#999}
+
+.modal-overlay{position:fixed;inset:0;background:rgba(30,46,74,.5);backdrop-filter:blur(4px);z-index:200;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.open{display:flex}
+.modal{background:var(--white);border-radius:var(--r);width:100%;max-width:560px;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-lg)}
+.modal-header{background:var(--navy);padding:18px 20px;border-radius:var(--r) var(--r) 0 0;display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.modal-title{font-family:'Playfair Display',serif;font-size:16px;color:var(--gold2);font-weight:600}
+.modal-shop{font-size:12px;color:rgba(203,184,150,.6);margin-top:3px}
+.modal-close{background:none;border:none;color:rgba(203,184,150,.5);cursor:pointer;font-size:20px;line-height:1;padding:0;flex-shrink:0}
+.modal-close:hover{color:var(--gold2)}
+.modal-body{padding:20px}
+.modal-section{margin-bottom:18px}
+.modal-section-title{font-size:11px;font-weight:500;color:#999;letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--cream2)}
+
+.camera-wrap{position:relative;background:#000;width:100%;aspect-ratio:4/3;overflow:hidden}
+#camera-video{width:100%;height:100%;object-fit:cover}
+.camera-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
+.scan-frame{width:65%;aspect-ratio:3/1;border:3px solid var(--gold);border-radius:8px;box-shadow:0 0 0 9999px rgba(0,0,0,.45);position:relative}
+.scan-line{position:absolute;top:0;left:0;right:0;height:2px;background:var(--gold);animation:scanline 2s linear infinite;box-shadow:0 0 8px var(--gold)}
+@keyframes scanline{0%{top:0}100%{top:100%}}
+.camera-hint{position:absolute;bottom:12px;left:0;right:0;text-align:center;color:rgba(255,255,255,.8);font-size:12px;letter-spacing:.06em}
+.camera-result{background:var(--green-bg);border:1px solid #90d4b0;border-radius:var(--rsm);padding:10px 14px;margin:12px 16px;font-size:13px;font-weight:500;color:var(--green-t);display:none}
+
+.log-item{display:flex;gap:10px;margin-bottom:12px}
+.log-dot{width:8px;height:8px;border-radius:50%;background:var(--gold);margin-top:5px;flex-shrink:0}
+.log-note{font-size:13px;color:var(--navy);margin-bottom:2px}
+.log-link a{font-size:12px;color:var(--blue-t);text-decoration:none}
+.log-link a:hover{text-decoration:underline}
+.log-time{font-size:11px;color:#bbb;margin-top:2px}
+
+.carrier-pill-big{display:flex;align-items:center;gap:8px;background:var(--cream);padding:8px 14px;border-radius:var(--rsm);border:1px solid var(--cream2)}
+.carrier-pill-big .num{font-family:'Playfair Display',serif;font-size:18px;font-weight:600;color:var(--navy)}
+.carrier-pill-big .unit{font-size:11px;color:#999}
+.shop-bar-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--cream2)}
+.shop-bar-item:last-child{border-bottom:none}
+.shop-name{font-size:13px;font-weight:500;min-width:90px}
+.bar-wrap{flex:1;height:6px;background:var(--cream2);border-radius:3px}
+.bar-fill{height:6px;background:var(--gold);border-radius:3px;transition:width .5s}
+.shop-num{font-size:12px;font-weight:600;min-width:50px;text-align:right}
+
+.pri-normal{color:#888;font-size:11px}
+.pri-urgent{color:#e67e22;font-size:11px;font-weight:600}
+.pri-critical{color:var(--red-t);font-size:11px;font-weight:600}
+
+/* ═══════════════════════════════════
+   สินค้าตีกลับ STYLES
+═══════════════════════════════════ */
+.ret-card{background:var(--white);border:1px solid var(--cream2);border-radius:var(--r);padding:16px 18px;margin-bottom:10px;box-shadow:var(--shadow);transition:box-shadow .15s;cursor:pointer}
+.ret-card:hover{box-shadow:var(--shadow-lg)}
+.ret-card-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px}
+.ret-card-num{font-family:'Playfair Display',serif;font-size:15px;font-weight:600;color:var(--navy);margin-bottom:2px;letter-spacing:.02em}
+.ret-card-meta{font-size:12px;color:#999;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.ret-card-body{font-size:13px;color:#666;line-height:1.5;margin-bottom:10px}
+.ret-card-footer{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ret-video-thumb{margin-top:10px;border-radius:var(--rsm);overflow:hidden;background:#000;position:relative}
+.ret-video-thumb iframe{width:100%;height:220px;border:none;display:block}
+.ret-video-thumb video{width:100%;max-height:220px;display:block;background:#000}
+.ret-video-link{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--blue-t);text-decoration:none;padding:5px 10px;border:1px solid var(--blue-bg);border-radius:var(--rsm);background:var(--blue-bg)}
+.ret-video-link:hover{background:#d0e4f8}
+.sts-return-wait{background:var(--red-bg);color:var(--red-t);border:1px solid #f5b8b8}
+.sts-return-recv{background:var(--amber-bg);color:var(--amber-t);border:1px solid #e8d48a}
+.sts-return-check{background:var(--blue-bg);color:var(--blue-t);border:1px solid #b0c4e8}
+.sts-return-done{background:var(--green-bg);color:var(--green-t);border:1px solid #90d4b0}
+
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="brand">The Fulfillment<small>warehouse system</small></div>
+  <button class="nav-btn active" onclick="showPage('dashboard',this)">Dashboard</button>
+  <button class="nav-btn" onclick="showPage('tasks',this)">งาน <span class="nav-badge" id="task-badge" style="display:none">0</span></button>
+  <button class="nav-btn" onclick="showPage('outbound',this)">ส่งออกสินค้า</button>
+  <button class="nav-btn" onclick="showPage('returns',this)">สินค้าตีกลับ <span class="nav-badge" id="return-badge" style="display:none">0</span></button>
+  <div class="rdot" title="Realtime connected"></div>
+</nav>
+
+<main>
+
+<!-- DASHBOARD -->
+<div class="page active" id="page-dashboard">
+  <div class="metrics" id="dash-metrics"></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+    <div class="card">
+      <div class="card-title">สถานะงาน</div>
+      <div class="kanban" id="dash-kanban"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">ส่งออกวันนี้ แยกตามขนส่ง</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px" id="dash-carrier"></div>
+      <div style="background:var(--navy);color:var(--gold2);padding:8px 14px;border-radius:var(--rsm);font-size:11px;font-weight:500;letter-spacing:.04em;margin-bottom:10px">สรุปรายร้านค้า วันนี้</div>
+      <div id="dash-shops"></div>
+    </div>
+  </div>
+</div>
+
+<!-- TASKS -->
+<div class="page" id="page-tasks">
+  <div class="card">
+    <div class="card-header"><span class="card-title" style="margin-bottom:0">สร้างงานใหม่</span></div>
+    <div class="form-row">
+      <div class="form-group"><label class="lbl">ร้านค้า / ลูกค้า</label><input id="t-shop" placeholder="เช่น ร้าน ABC"></div>
+      <div class="form-group"><label class="lbl">หัวข้องาน</label><input id="t-title" placeholder="เช่น แพ็คสินค้า 50 ชิ้น"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="lbl">เลข Tracking</label><input id="t-assign" placeholder="เช่น TH6712345678"></div>
+      <div class="form-group"><label class="lbl">ความสำคัญ</label>
+        <select id="t-priority"><option>ปกติ</option><option>ด่วน</option><option>เร่งด่วนมาก</option></select>
+      </div>
+    </div>
+    <div class="form-row one">
+      <div class="form-group"><label class="lbl">รายละเอียด</label><textarea id="t-detail" placeholder="รายละเอียดงาน..."></textarea></div>
+    </div>
+    <button class="btn btn-primary" onclick="addTask()">+ สร้างงาน</button>
+  </div>
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title" style="margin-bottom:0">รายการงานทั้งหมด</span>
+      <select id="filter-status" onchange="renderTasks()" style="font-size:12px;padding:5px 9px;width:auto;border-radius:var(--rpill)">
+        <option value="">ทุกสถานะ</option><option>รอดำเนินการ</option><option>กำลังทำ</option><option>เสร็จแล้ว</option>
+      </select>
+    </div>
+    <table class="tbl">
+      <thead><tr><th>#</th><th>งาน</th><th>ร้านค้า</th><th>Tracking</th><th>สถานะ</th><th>วันที่</th></tr></thead>
+      <tbody id="task-tbody"></tbody>
+    </table>
+    <div class="empty" id="task-empty" style="display:none"><div class="empty-icon">📋</div>ยังไม่มีงาน</div>
+  </div>
+</div>
+
+<!-- OUTBOUND -->
+<div class="page" id="page-outbound">
+  <div class="card no-print">
+    <div class="card-header">
+      <span class="card-title" style="margin-bottom:0">ข้อมูลรอบส่ง</span>
+      <button class="btn btn-sm btn-danger" onclick="clearSession()">ล้างรอบ</button>
+    </div>
+    <div class="form-row three">
+      <div class="form-group"><label class="lbl">ร้านค้า</label><input id="ob-shop" placeholder="ชื่อร้านค้า"></div>
+      <div class="form-group">
+        <label class="lbl">ขนส่ง</label>
+        <select id="ob-carrier" onchange="toggleCustom('ob-carrier','ob-custom')">
+          <option value="Flash">Flash Express</option>
+          <option value="J&T">J&T Express</option>
+          <option value="Kerry">Kerry Express</option>
+          <option value="LEX">LEX (Lazada)</option>
+          <option value="Shopee">Shopee Express</option>
+          <option value="ไปรษณีย์ไทย">ไปรษณีย์ไทย</option>
+          <option value="Grab">Grab</option>
+          <option value="__custom__">อื่นๆ (กรอกเอง)</option>
+        </select>
+        <input id="ob-custom" placeholder="ระบุชื่อขนส่ง..." style="display:none;margin-top:6px">
+      </div>
+      <div class="form-group"><label class="lbl">วันที่</label><input id="ob-date" type="date"></div>
+    </div>
+  </div>
+
+  <div class="scan-zone no-print">
+    <div class="scan-label">สแกน Tracking Number — กด Enter หรือใช้กล้อง</div>
+    <div class="scan-row">
+      <input id="scan-input" class="scan-input" placeholder="สแกนหรือพิมพ์ Tracking Number..." autocomplete="off" spellcheck="false" onkeydown="if(event.key==='Enter')addTracking()" oninput="liveDetectCarrier(this.value)">
+      <button class="btn btn-camera" onclick="openCamera()" title="สแกนด้วยกล้อง">📷</button>
+      <button class="btn btn-gold" onclick="addTracking()">+ เพิ่ม</button>
+    </div>
+    <div id="carrier-hint" style="min-height:22px;margin-top:8px;transition:opacity .2s"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title" style="margin-bottom:0">Tracking Numbers <span id="tracking-count" style="font-size:13px;font-weight:400;color:var(--gold3)"></span></span>
+      <button class="btn btn-primary no-print" onclick="saveAndPrint()">🖨 บันทึก & พิมพ์</button>
+    </div>
+    <div id="tracking-list"></div>
+    <div class="empty" id="tracking-empty"><div class="empty-icon">📦</div>สแกน Tracking Number ด้านบนเพื่อเริ่มต้น</div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title" style="margin-bottom:0">ประวัติรอบที่บันทึก</span>
+      <input type="date" id="ob-filter" onchange="renderHistory()" style="font-size:12px;padding:5px 9px;width:auto;border-radius:var(--rpill)">
+    </div>
+    <div id="ob-summary-bar" style="margin-bottom:12px"></div>
+    <table class="tbl">
+      <thead><tr><th>ร้านค้า</th><th>ขนส่ง</th><th>จำนวน</th><th>วันที่</th><th>จัดการ</th></tr></thead>
+      <tbody id="ob-tbody"></tbody>
+    </table>
+    <div class="empty" id="ob-empty" style="display:none"><div class="empty-icon">📦</div>ยังไม่มีประวัติ</div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════
+     สินค้าตีกลับ PAGE
+════════════════════════════════════════════════ -->
+<div class="page" id="page-returns">
+
+  <div class="metrics" id="ret-metrics"></div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title" style="margin-bottom:0">บันทึกสินค้าตีกลับ</span>
+    </div>
+    <div class="form-row three">
+      <div class="form-group"><label class="lbl">เลข Tracking</label><input id="ret-tracking" placeholder="เช่น TH6712345678"></div>
+      <div class="form-group"><label class="lbl">ร้านค้า / ลูกค้า</label><input id="ret-shop" placeholder="ชื่อร้านค้า"></div>
+      <div class="form-group">
+        <label class="lbl">ขนส่ง</label>
+        <select id="ret-carrier">
+          <option value="Flash">Flash Express</option>
+          <option value="J&T">J&T Express</option>
+          <option value="Kerry">Kerry Express</option>
+          <option value="LEX">LEX (Lazada)</option>
+          <option value="Shopee">Shopee Express</option>
+          <option value="ไปรษณีย์ไทย">ไปรษณีย์ไทย</option>
+          <option value="Grab">Grab</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="lbl">สาเหตุที่ตีกลับ</label>
+        <select id="ret-reason">
+          <option>ไม่มีผู้รับ</option>
+          <option>ที่อยู่ผิด</option>
+          <option>ผู้รับปฏิเสธ</option>
+          <option>พัสดุเสียหาย</option>
+          <option>ผู้รับไม่ชำระเงิน (COD)</option>
+          <option>อื่นๆ</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="lbl">สถานะ</label>
+        <select id="ret-status">
+          <option value="รอรับสินค้า">รอรับสินค้า</option>
+          <option value="รับสินค้าแล้ว">รับสินค้าแล้ว</option>
+          <option value="ตรวจสอบแล้ว">ตรวจสอบแล้ว</option>
+          <option value="ดำเนินการแล้ว">ดำเนินการแล้ว</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row one">
+      <div class="form-group"><label class="lbl">รายละเอียดสินค้า / หมายเหตุ</label>
+        <textarea id="ret-note" placeholder="เช่น สภาพสินค้า, รายการสินค้าในพัสดุ, ขั้นตอนที่ต้องทำต่อ..." style="min-height:70px"></textarea>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="lbl">แท็ก (Tag)</label>
+        <div class="tag-input-wrap" id="ret-tags-wrap" onclick="document.getElementById('ret-tag-input').focus()">
+          <input id="ret-tag-input" class="tag-bare-input" placeholder="พิมพ์แล้วกด Enter เช่น ชำรุด, COD, คืนร้านค้า" onkeydown="handleTagInput(event,'ret-tags-wrap','ret-tag-input')">
+        </div>
+        <div style="font-size:11px;color:#bbb;margin-top:4px">กด Enter หรือ , เพื่อเพิ่มแท็ก</div>
+      </div>
+      <div class="form-group">
+        <label class="lbl">วันที่รับกลับคลัง</label>
+        <input id="ret-arrived-date" type="date">
+      </div>
+    </div>
+    <div class="form-row one" style="margin-bottom:14px">
+      <div class="form-group">
+        <label class="lbl">วิดีโอหลักฐาน (URL)</label>
+        <input id="ret-video-url" placeholder="วาง URL เช่น https://youtube.com/... หรือ https://drive.google.com/...">
+        <div style="font-size:11px;color:#bbb;margin-top:5px">รองรับ YouTube, TikTok, Facebook, Google Drive, หรือไฟล์ .mp4 โดยตรง</div>
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="addReturn()">+ บันทึกสินค้าตีกลับ</button>
+  </div>
+
+  <div class="card">
+    <div class="card-header" style="flex-wrap:wrap;gap:8px">
+      <span class="card-title" style="margin-bottom:0">รายการสินค้าตีกลับทั้งหมด</span>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <input type="text" id="ret-search" placeholder="ค้นหา Tracking / ร้านค้า..." style="width:180px" oninput="renderReturns()">
+        <select id="ret-filter-status" style="width:150px" onchange="renderReturns()">
+          <option value="">ทุกสถานะ</option>
+          <option>รอรับสินค้า</option>
+          <option>รับสินค้าแล้ว</option>
+          <option>ตรวจสอบแล้ว</option>
+          <option>ดำเนินการแล้ว</option>
+        </select>
+      </div>
+    </div>
+    <div id="ret-list"></div>
+    <div class="empty" id="ret-empty"><div class="empty-icon">📦</div>ยังไม่มีสินค้าตีกลับ</div>
+  </div>
+
+</div><!-- /page-returns -->
+
+</main>
+
+
+<!-- RETURN DETAIL MODAL -->
+<div class="modal-overlay" id="return-modal" onclick="if(event.target===this)closeReturnModal()">
+  <div class="modal" style="max-width:600px">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="ret-modal-title">รายละเอียดสินค้าตีกลับ</div>
+        <div class="modal-shop" id="ret-modal-sub"></div>
+      </div>
+      <button class="modal-close" onclick="closeReturnModal()">&#x2715;</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-section">
+        <div class="modal-section-title">ข้อมูลทั่วไป</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+          <div class="form-group"><label class="lbl">เลข Tracking</label><input id="ret-edit-tracking"></div>
+          <div class="form-group"><label class="lbl">ร้านค้า</label><input id="ret-edit-shop"></div>
+          <div class="form-group"><label class="lbl">ขนส่ง</label>
+            <select id="ret-edit-carrier">
+              <option value="Flash">Flash Express</option><option value="J&T">J&T Express</option>
+              <option value="Kerry">Kerry Express</option><option value="LEX">LEX (Lazada)</option>
+              <option value="Shopee">Shopee Express</option><option value="ไปรษณีย์ไทย">ไปรษณีย์ไทย</option>
+              <option value="Grab">Grab</option>
+            </select>
+          </div>
+          <div class="form-group"><label class="lbl">สาเหตุ</label>
+            <select id="ret-edit-reason">
+              <option>ไม่มีผู้รับ</option><option>ที่อยู่ผิด</option><option>ผู้รับปฏิเสธ</option>
+              <option>พัสดุเสียหาย</option><option>ผู้รับไม่ชำระเงิน (COD)</option><option>อื่นๆ</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:10px"><label class="lbl">สถานะ</label>
+          <select id="ret-edit-status" style="width:auto;border-radius:var(--rpill)">
+            <option>รอรับสินค้า</option><option>รับสินค้าแล้ว</option>
+            <option>ตรวจสอบแล้ว</option><option>ดำเนินการแล้ว</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin-bottom:12px"><label class="lbl">รายละเอียด / หมายเหตุ</label>
+          <textarea id="ret-edit-note" style="min-height:70px"></textarea>
+        </div>
+        <div class="form-row" style="margin-bottom:10px">
+          <div class="form-group">
+            <label class="lbl">แท็ก (Tag)</label>
+            <div class="tag-input-wrap" id="ret-edit-tags-wrap" onclick="document.getElementById('ret-edit-tag-input').focus()">
+              <input id="ret-edit-tag-input" class="tag-bare-input" placeholder="พิมพ์แล้วกด Enter..." onkeydown="handleTagInput(event,'ret-edit-tags-wrap','ret-edit-tag-input')">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="lbl">วันที่รับกลับคลัง</label>
+            <input id="ret-edit-arrived-date" type="date">
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:14px">
+          <label class="lbl">วิดีโอหลักฐาน (URL)</label>
+          <input id="ret-edit-video" placeholder="วาง URL วิดีโอ...">
+        </div>
+        <div id="ret-video-preview" style="margin-bottom:14px"></div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-primary btn-sm" onclick="saveReturnEdit()">&#x1F4BE; บันทึก</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteReturn()">&#x1F5D1; ลบรายการ</button>
+        </div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-title">บันทึกอัปเดต</div>
+        <div class="form-group" style="margin-bottom:8px">
+          <textarea id="ret-update-note" placeholder="เช่น ตรวจสอบสินค้าแล้ว สภาพดี, ติดต่อลูกค้าแล้ว..." style="min-height:60px"></textarea>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="addReturnUpdate()">+ บันทึกอัปเดต</button>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-title">ประวัติอัปเดต</div>
+        <div id="ret-modal-updates"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SESSION TRACKING LIST MODAL -->
+<div class="modal-overlay" id="session-trk-modal" onclick="if(event.target===this)closeSessionTrkModal()">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="session-trk-title">รายการ Tracking</div>
+        <div class="modal-shop" id="session-trk-sub"></div>
+      </div>
+      <button class="modal-close" onclick="closeSessionTrkModal()">✕</button>
+    </div>
+    <div class="modal-body" style="padding:16px 20px">
+      <div id="session-trk-body"><div style="text-align:center;padding:20px;color:#bbb">กำลังโหลด...</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- CAMERA MODAL -->
+<div class="modal-overlay" id="camera-modal">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">📷 สแกนบาร์โค้ด</div>
+        <div class="modal-shop">ชี้กล้องไปที่บาร์โค้ด Tracking Number</div>
+      </div>
+      <button class="modal-close" onclick="stopCamera()">✕</button>
+    </div>
+    <div class="camera-wrap">
+      <video id="camera-video" autoplay playsinline muted></video>
+      <div class="camera-overlay">
+        <div class="scan-frame"><div class="scan-line"></div></div>
+      </div>
+      <div class="camera-hint">กรอบสีทองคือจุดสแกน — วางบาร์โค้ดให้อยู่ในกรอบ</div>
+    </div>
+    <div class="camera-result" id="camera-result"></div>
+    <div style="padding:14px 16px;display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn" onclick="stopCamera()">ปิดกล้อง</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT SESSION MODAL -->
+<div class="modal-overlay" id="session-modal" onclick="if(event.target===this)closeSessionModal()">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <div><div class="modal-title">แก้ไขรายการส่งออก</div></div>
+      <button class="modal-close" onclick="closeSessionModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-session-id">
+      <div class="form-group" style="margin-bottom:10px">
+        <label class="lbl">ร้านค้า</label>
+        <input id="edit-session-shop" placeholder="ชื่อร้านค้า">
+      </div>
+      <div class="form-group" style="margin-bottom:10px">
+        <label class="lbl">ขนส่ง</label>
+        <select id="edit-session-carrier" onchange="toggleCustom('edit-session-carrier','edit-session-custom')">
+          <option value="Flash">Flash Express</option>
+          <option value="J&T">J&T Express</option>
+          <option value="Kerry">Kerry Express</option>
+          <option value="LEX">LEX (Lazada)</option>
+          <option value="Shopee">Shopee Express</option>
+          <option value="ไปรษณีย์ไทย">ไปรษณีย์ไทย</option>
+          <option value="Grab">Grab</option>
+          <option value="__custom__">อื่นๆ (กรอกเอง)</option>
+        </select>
+        <input id="edit-session-custom" placeholder="ระบุชื่อขนส่ง..." style="display:none;margin-top:6px">
+      </div>
+      <div class="form-group" style="margin-bottom:16px">
+        <label class="lbl">จำนวน (ชิ้น)</label>
+        <input id="edit-session-qty" type="number" min="1">
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-primary" onclick="saveSessionEdit()">💾 บันทึก</button>
+        <button class="btn" onclick="closeSessionModal()">ยกเลิก</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TASK MODAL -->
+<div class="modal-overlay" id="task-modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="modal-title"></div>
+        <div class="modal-shop" id="modal-shop"></div>
+      </div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-section">
+        <div class="modal-section-title">รายละเอียดงาน</div>
+        <div id="modal-detail" style="font-size:13px;color:#555;line-height:1.6"></div>
+        <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+          <div id="modal-assign" style="font-size:12px;color:#888;font-family:monospace"></div>
+          <div id="modal-priority"></div>
+        </div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-title">แก้ไขข้อมูลงาน</div>
+        <div class="form-row" style="margin-bottom:8px">
+          <div class="form-group"><label class="lbl">หัวข้องาน</label><input id="edit-title"></div>
+          <div class="form-group"><label class="lbl">ร้านค้า</label><input id="edit-shop"></div>
+        </div>
+        <div class="form-row" style="margin-bottom:8px">
+          <div class="form-group"><label class="lbl">เลข Tracking</label><input id="edit-assign" placeholder="เช่น TH6712345678"></div>
+          <div class="form-group"><label class="lbl">ความสำคัญ</label>
+            <select id="edit-priority"><option>ปกติ</option><option>ด่วน</option><option>เร่งด่วนมาก</option></select>
+          </div>
+        </div>
+        <div class="form-row one" style="margin-bottom:8px">
+          <div class="form-group"><label class="lbl">รายละเอียด</label><textarea id="edit-detail" style="min-height:60px"></textarea></div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <select id="modal-status" style="border-radius:var(--rpill);font-size:13px;padding:6px 12px;width:auto">
+            <option>รอดำเนินการ</option><option>กำลังทำ</option><option>เสร็จแล้ว</option>
+          </select>
+          <button class="btn btn-primary btn-sm" onclick="saveTaskEdit()">💾 บันทึก</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteTask()">🗑 ลบงาน</button>
+        </div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-title">อัปเดตความคืบหน้า</div>
+        <div class="form-group" style="margin-bottom:8px">
+          <textarea id="update-note" placeholder="เขียนอัปเดต เช่น แพ็คเสร็จแล้ว รอติดสติ๊กเกอร์..." style="min-height:60px"></textarea>
+        </div>
+        <div class="form-row" style="margin-bottom:8px">
+          <div class="form-group"><input id="update-link-url" placeholder="ลิงก์ (URL)"></div>
+          <div class="form-group"><input id="update-link-label" placeholder="ชื่อลิงก์ เช่น Google Drive"></div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="addUpdate()">+ บันทึกอัปเดต</button>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-title">ประวัติการอัปเดต</div>
+        <div id="modal-updates"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const SURL = 'https://ofyxjzcxcblmmxyueqbj.supabase.co';
+const SKEY = 'sb_publishable_vMVenRXl9uPAuBJgxEfWbg_eFgEKhNr';
+const {createClient} = supabase;
+const sb = createClient(SURL, SKEY);
+
+let tasks=[], currentTaskId=null, trackingList=[];
+let codeReader=null, cameraStream=null;
+const KNOWN_CARRIERS = ['Flash','J&T','Kerry','LEX','Shopee','ไปรษณีย์ไทย','Grab'];
+
+// ── HELPERS ──────────────────────────────────────────────
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200)}
+function today(){return new Date().toISOString().slice(0,10)}
+function fmtDate(d){if(!d)return'—';return new Date(d).toLocaleDateString('th-TH',{day:'2-digit',month:'2-digit',year:'numeric'})}
+function fmtTime(d){if(!d)return'';return new Date(d).toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})}
+
+function toggleCustom(selId,inputId){
+  const s=document.getElementById(selId),i=document.getElementById(inputId);
+  if(s.value==='__custom__'){i.style.display='block';i.focus()}
+  else{i.style.display='none';i.value=''}
+}
+function getCarrier(selId,customId){
+  const s=document.getElementById(selId);
+  if(s.value==='__custom__'){return document.getElementById(customId).value.trim()||'อื่นๆ'}
+  return s.value;
+}
+function carrierPill(c){
+  const map={Flash:'c-flash','J&T':'c-jt',Kerry:'c-kerry',LEX:'c-lex',Shopee:'c-shopee','ไปรษณีย์ไทย':'c-thaipost'};
+  return `<span class="carrier ${map[c]||'c-other'}">${c}</span>`;
+}
+function priClass(p){if(p==='ด่วน')return'pri-urgent';if(p==='เร่งด่วนมาก')return'pri-critical';return'pri-normal'}
+
+// ── NAV ───────────────────────────────────────────────────
+function showPage(id,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  btn.classList.add('active');
+  if(id==='dashboard')renderDashboard();
+  if(id==='tasks')renderTasks();
+  if(id==='outbound'){renderHistory();setTimeout(()=>document.getElementById('scan-input').focus(),100)}
+  if(id==='tracking'){document.getElementById('trk-empty').style.display='block';document.getElementById('trk-result').innerHTML='';}
+}
+
+// ── TASKS ─────────────────────────────────────────────────
+async function loadTasks(){
+  const{data}=await sb.from('tasks').select('*').order('created_at',{ascending:false});
+  tasks=data||[];renderTasks();renderDashboard();updateBadge();
+}
+function updateBadge(){
+  const n=tasks.filter(t=>t.status!=='เสร็จแล้ว').length;
+  const b=document.getElementById('task-badge');
+  b.style.display=n?'inline-flex':'none';b.textContent=n;
+}
+async function addTask(){
+  const shop=document.getElementById('t-shop').value.trim();
+  const title=document.getElementById('t-title').value.trim();
+  if(!shop||!title){toast('กรุณากรอกชื่อร้านและหัวข้องาน');return}
+  await sb.from('tasks').insert({shop_name:shop,title,detail:document.getElementById('t-detail').value.trim(),assigned_to:document.getElementById('t-assign').value.trim(),priority:document.getElementById('t-priority').value,status:'รอดำเนินการ'});
+  ['t-shop','t-title','t-detail','t-assign'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('t-priority').value='ปกติ';
+  toast('สร้างงานแล้ว ✓');
+}
+function renderTasks(){
+  const filter=document.getElementById('filter-status').value;
+  let list=filter?tasks.filter(t=>t.status===filter):[...tasks];
+  list.sort((a,b)=>{
+    const p={'เร่งด่วนมาก':0,'ด่วน':1,'ปกติ':2};
+    if(a.status==='เสร็จแล้ว'&&b.status!=='เสร็จแล้ว')return 1;
+    if(b.status==='เสร็จแล้ว'&&a.status!=='เสร็จแล้ว')return -1;
+    return(p[a.priority]||2)-(p[b.priority]||2);
+  });
+  document.getElementById('task-empty').style.display=list.length?'none':'block';
+  document.getElementById('task-tbody').innerHTML=list.map((t,i)=>`
+    <tr class="${t.status==='เสร็จแล้ว'?'tbl-done':''}" onclick="openTask('${t.id}')" style="cursor:pointer">
+      <td style="color:#bbb;font-size:11px">${i+1}</td>
+      <td><div style="font-weight:500;font-size:13px">${t.title}</div><span class="${priClass(t.priority)}">${t.priority!=='ปกติ'?'⚡ '+t.priority:''}</span></td>
+      <td style="font-weight:500">${t.shop_name}</td>
+      <td style="color:#888;font-size:12px;font-family:'DM Sans',monospace">${t.assigned_to||'—'}</td>
+      <td onclick="event.stopPropagation()">
+        <select class="status-select" onchange="quickStatus('${t.id}',this.value)">
+          <option ${t.status==='รอดำเนินการ'?'selected':''}>รอดำเนินการ</option>
+          <option ${t.status==='กำลังทำ'?'selected':''}>กำลังทำ</option>
+          <option ${t.status==='เสร็จแล้ว'?'selected':''}>เสร็จแล้ว</option>
+        </select>
+      </td>
+      <td style="color:#bbb;font-size:11px">${fmtDate(t.created_at)}</td>
+    </tr>`).join('');
+}
+async function quickStatus(id,val){
+  const u={status:val};
+  if(val==='กำลังทำ')u.started_at=new Date().toISOString();
+  if(val==='เสร็จแล้ว')u.completed_at=new Date().toISOString();
+  await sb.from('tasks').update(u).eq('id',id);toast('อัปเดตสถานะแล้ว ✓');
+}
+
+// ── TASK MODAL ────────────────────────────────────────────
+async function openTask(id){
+  currentTaskId=id;
+  const t=tasks.find(x=>x.id===id);if(!t)return;
+  document.getElementById('modal-title').textContent=t.title;
+  document.getElementById('modal-shop').textContent=t.shop_name;
+  document.getElementById('modal-detail').textContent=t.detail||'ไม่มีรายละเอียด';
+  document.getElementById('modal-assign').textContent=t.assigned_to?'👤 '+t.assigned_to:'';
+  document.getElementById('modal-priority').innerHTML=t.priority!=='ปกติ'?`<span class="${priClass(t.priority)}">⚡ ${t.priority}</span>`:'';
+  document.getElementById('edit-title').value=t.title;
+  document.getElementById('edit-shop').value=t.shop_name;
+  document.getElementById('edit-assign').value=t.assigned_to||'';
+  document.getElementById('edit-priority').value=t.priority||'ปกติ';
+  document.getElementById('edit-detail').value=t.detail||'';
+  document.getElementById('modal-status').value=t.status;
+  await loadUpdates(id);
+  document.getElementById('task-modal').classList.add('open');
+}
+function closeModal(){document.getElementById('task-modal').classList.remove('open');currentTaskId=null}
+async function saveTaskEdit(){
+  if(!currentTaskId)return;
+  const title=document.getElementById('edit-title').value.trim();
+  const shop=document.getElementById('edit-shop').value.trim();
+  if(!title||!shop){toast('กรุณากรอกหัวข้อและร้านค้า');return}
+  const val=document.getElementById('modal-status').value;
+  const u={title,shop_name:shop,assigned_to:document.getElementById('edit-assign').value.trim(),priority:document.getElementById('edit-priority').value,detail:document.getElementById('edit-detail').value.trim(),status:val};
+  if(val==='กำลังทำ')u.started_at=new Date().toISOString();
+  if(val==='เสร็จแล้ว')u.completed_at=new Date().toISOString();
+  const{error}=await sb.from('tasks').update(u).eq('id',currentTaskId);
+  if(error){toast('เกิดข้อผิดพลาด');return}
+  toast('บันทึกการแก้ไขแล้ว ✓');closeModal();
+}
+async function deleteTask(){
+  if(!currentTaskId)return;
+  if(!confirm('ต้องการลบงานนี้ใช่มั้ย?'))return;
+  await sb.from('tasks').delete().eq('id',currentTaskId);
+  toast('ลบงานแล้ว');closeModal();
+}
+async function loadUpdates(taskId){
+  const{data}=await sb.from('task_updates').select('*').eq('task_id',taskId).order('created_at',{ascending:true});
+  const el=document.getElementById('modal-updates');
+  if(!data||!data.length){el.innerHTML='<div style="color:#bbb;font-size:12px">ยังไม่มีการอัปเดต</div>';return}
+  el.innerHTML=data.map(u=>`
+    <div class="log-item">
+      <div class="log-dot"></div>
+      <div>
+        ${u.note?`<div class="log-note">${u.note}</div>`:''}
+        ${u.link_url?`<div class="log-link"><a href="${u.link_url}" target="_blank">🔗 ${u.link_label||u.link_url}</a></div>`:''}
+        <div class="log-time">${fmtDate(u.created_at)} ${fmtTime(u.created_at)}</div>
+      </div>
+    </div>`).join('');
+}
+async function addUpdate(){
+  if(!currentTaskId)return;
+  const note=document.getElementById('update-note').value.trim();
+  const url=document.getElementById('update-link-url').value.trim();
+  const label=document.getElementById('update-link-label').value.trim();
+  if(!note&&!url){toast('กรุณากรอกข้อความหรือลิงก์');return}
+  await sb.from('task_updates').insert({task_id:currentTaskId,note,link_url:url||null,link_label:label||null});
+  ['update-note','update-link-url','update-link-label'].forEach(id=>document.getElementById(id).value='');
+  await loadUpdates(currentTaskId);toast('บันทึกอัปเดตแล้ว ✓');
+}
+
+// ── CAMERA ───────────────────────────────────────────────
+async function openCamera(){
+  const modal=document.getElementById('camera-modal');
+  modal.style.display='flex';
+  document.getElementById('camera-result').style.display='none';
+  try{
+    cameraStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment',width:{ideal:1280},height:{ideal:720}}});
+    const video=document.getElementById('camera-video');
+    video.srcObject=cameraStream;
+    if(typeof ZXing!=='undefined'){
+      codeReader=new ZXing.BrowserMultiFormatReader();
+      codeReader.decodeFromVideoDevice(null,'camera-video',(result,err)=>{
+        if(result){handleScan(result.getText())}
+      });
+    } else {toast('ไม่สามารถโหลด barcode library ได้')}
+  }catch(e){
+    toast('ไม่สามารถเข้าถึงกล้องได้ — กรุณาอนุญาตการใช้กล้อง');
+    modal.style.display='none';
+  }
+}
+function handleScan(code){
+  const resultEl=document.getElementById('camera-result');
+  if(!trackingList.includes(code)){
+    trackingList.push(code);
+    const detected = detectAndSetCarrier(code);
+    renderTrackingList();
+    const msg = detected ? '✓ '+code+' · '+detected : '✓ สแกนได้: '+code;
+    resultEl.textContent=msg;
+    resultEl.style.display='block';
+    toast('เพิ่ม '+code+(detected?' · '+detected:'')+' แล้ว ✓');
+  } else {
+    resultEl.textContent='⚠️ เพิ่มไปแล้ว: '+code;
+    resultEl.style.display='block';
+    toast('Tracking นี้เพิ่มไปแล้ว');
+  }
+  setTimeout(()=>{resultEl.style.display='none'},2500);
+}
+function stopCamera(){
+  if(codeReader){try{codeReader.reset()}catch(e){}}
+  if(cameraStream){cameraStream.getTracks().forEach(t=>t.stop())}
+  codeReader=null;cameraStream=null;
+  document.getElementById('camera-modal').style.display='none';
+}
+
+// ── OUTBOUND ─────────────────────────────────────────────
+
+function liveDetectCarrier(val) {
+  const hint = document.getElementById('carrier-hint');
+  if (!hint) return;
+  if (!val || val.length < 4) { hint.innerHTML = ''; return; }
+  const dc = detectCarrier(val.toUpperCase());
+  if (dc) {
+    hint.innerHTML = '<span style="font-size:12px;color:rgba(203,184,150,.7)">ตรวจพบ: </span>' + carrierPill(dc);
+  } else {
+    hint.innerHTML = '<span style="font-size:12px;color:rgba(203,184,150,.3)">ยังไม่สามารถระบุขนส่งได้</span>';
+  }
+}
+
+// ── CARRIER AUTO-DETECT ──────────────────────────────────
+function detectCarrier(trackingNum) {
+  const t = trackingNum.toUpperCase().trim();
+  // Flash Express: TH + 12 digits หรือ THTHXXXXXX
+  if (/^(TH|EF|EE|EA|EB|EC|ED)\d{9,14}$/.test(t)) return 'Flash';
+  // J&T Express: 600/700/800 ขึ้นต้น หรือ JT
+  if (/^(JT|600|700|800|JD)\d{6,14}$/.test(t)) return 'J&T';
+  if (/^\d{10}$/.test(t) && (t.startsWith('6')||t.startsWith('7')||t.startsWith('8'))) return 'J&T';
+  // Kerry Express: KERRY / K / KRY
+  if (/^(KERRY|KRY|K)\d{8,14}$/.test(t)) return 'Kerry';
+  if (/^[A-Z]{2}\d{9}TH$/.test(t) && (t.startsWith('RX')||t.startsWith('RR')||t.startsWith('EW')||t.startsWith('CP'))) return 'Kerry';
+  // Shopee Express: SP / SPX
+  if (/^SP\d{12,16}$/.test(t)) return 'Shopee';
+  if (/^SPX\d{8,16}$/.test(t)) return 'Shopee';
+  // LEX Lazada: LEX / LZ
+  if (/^(LEX|LZ)\d{8,16}$/.test(t)) return 'LEX';
+  // ไปรษณีย์ไทย: EH/ET/RH/LY/PF/CG + 9 digits + TH
+  if (/^[A-Z]{2}\d{9}TH$/.test(t)) return 'ไปรษณีย์ไทย';
+  // Grab: GR / GRAB
+  if (/^GR[A-Z0-9]{8,16}$/.test(t)) return 'Grab';
+  // ตรวจจาก select ที่เลือกไว้ (fallback)
+  return null;
+}
+
+function detectAndSetCarrier(trackingNum) {
+  const detected = detectCarrier(trackingNum);
+  if (detected) {
+    const sel = document.getElementById('ob-carrier');
+    const known = ['Flash','J&T','Kerry','LEX','Shopee','ไปรษณีย์ไทย','Grab'];
+    if (known.includes(detected)) {
+      sel.value = detected;
+      document.getElementById('ob-custom').style.display = 'none';
+    }
+    return detected;
+  }
+  return null;
+}
+
+function addTracking(){
+  const input=document.getElementById('scan-input');
+  const val=input.value.trim().toUpperCase();
+  if(!val){input.focus();return}
+  if(trackingList.includes(val)){toast('Tracking นี้เพิ่มไปแล้ว');input.value='';input.focus();return}
+  trackingList.push(val);input.value='';input.focus();
+  const detected = detectAndSetCarrier(val);
+  renderTrackingList();
+  toast(detected ? 'เพิ่ม '+val+' · ตรวจพบ '+detected+' ✓' : 'เพิ่ม '+val+' แล้ว ✓');
+}
+function removeTracking(val){trackingList=trackingList.filter(t=>t!==val);renderTrackingList()}
+function renderTrackingList(){
+  const el=document.getElementById('tracking-list');
+  const empty=document.getElementById('tracking-empty');
+  const count=document.getElementById('tracking-count');
+  empty.style.display=trackingList.length?'none':'block';
+  count.textContent=trackingList.length?`${trackingList.length} รายการ`:'';
+  el.innerHTML=trackingList.map((t,i)=>{
+    const dc=detectCarrier(t);
+    const cPill=dc?carrierPill(dc):'<span style="font-size:11px;color:#bbb">ไม่ทราบขนส่ง</span>';
+    return`<div class="tracking-item">
+      <div class="tracking-num">📦 ${t}</div>
+      <div style="display:flex;align-items:center;gap:6px">${cPill}<span style="font-size:11px;color:var(--gold3);font-weight:500">${i+1}</span></div>
+      <button class="btn btn-sm btn-danger" onclick="removeTracking('${t}')">✕</button>
+    </div>`;}).join('');
+}
+async function saveAndPrint(){
+  if(!trackingList.length){toast('ยังไม่มี Tracking Number');return}
+  const shop=document.getElementById('ob-shop').value.trim()||'ไม่ระบุ';
+  const carrier=getCarrier('ob-carrier','ob-custom');
+  const date=document.getElementById('ob-date').value||today();
+  const{data:session,error}=await sb.from('outbound_sessions').insert({shop_name:shop,carrier,session_date:date,total_parcels:trackingList.length}).select().single();
+  if(error){toast('เกิดข้อผิดพลาด: '+error.message);return}
+  await sb.from('outbound_items').insert(trackingList.map(t=>({session_id:session.id,tracking_number:t})));
+  toast('บันทึกแล้ว ✓');
+  const win=window.open('','_blank','width=700,height=900');
+  win.document.write(`<html><head><title>The Fulfillment — ใบส่งสินค้า</title>
+  <style>body{font-family:Arial,sans-serif;padding:30px;color:#1E2E4A}h1{font-size:20px;margin-bottom:4px}.sub{font-size:11px;color:#999;letter-spacing:.1em;text-transform:uppercase;margin-bottom:20px}.info{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px;padding:12px;background:#f5f2ed;border-radius:8px}.info label{font-size:10px;color:#999;text-transform:uppercase;letter-spacing:.06em}.info div{font-size:14px;font-weight:600}table{width:100%;border-collapse:collapse;margin-bottom:20px}th{background:#1E2E4A;color:#CBB896;padding:8px 10px;text-align:left;font-size:11px}td{padding:8px 10px;border-bottom:1px solid #eee;font-size:13px}.total{font-weight:700;font-size:15px}.sign{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:40px}.sign-box{border-top:1px solid #ccc;padding-top:8px;text-align:center;font-size:11px;color:#999}.footer{margin-top:30px;font-size:10px;color:#bbb;text-align:center}</style></head><body>
+  <h1>The Fulfillment</h1><div class="sub">เอกสารรายการส่งสินค้า</div>
+  <div class="info"><div><label>ร้านค้า</label><div>${shop}</div></div><div><label>วันที่</label><div>${date}</div></div><div><label>ขนส่ง</label><div>${carrier}</div></div><div><label>รวม</label><div>${trackingList.length} ชิ้น</div></div></div>
+  <table><thead><tr><th>#</th><th>Tracking Number</th></tr></thead><tbody>${trackingList.map((t,i)=>`<tr><td>${i+1}</td><td>${t}</td></tr>`).join('')}</tbody><tfoot><tr style="background:#f5f2ed"><td class="total">รวม</td><td class="total">${trackingList.length} ชิ้น</td></tr></tfoot></table>
+  <div class="sign"><div class="sign-box">ผู้ส่งสินค้า</div><div class="sign-box">ผู้ตรวจสอบ</div></div>
+  <div class="footer">พิมพ์เมื่อ ${new Date().toLocaleString('th-TH')} · The Fulfillment Warehouse</div>
+  <script>window.onload=()=>window.print()<\/script></body></html>`);
+  win.document.close();
+  trackingList=[];renderTrackingList();renderHistory();renderDashboard();
+}
+function clearSession(){if(!trackingList.length){toast('ไม่มีข้อมูลในรอบนี้');return}trackingList=[];renderTrackingList();toast('ล้างรอบแล้ว')}
+
+// ── EDIT SESSION ──────────────────────────────────────────
+function editSession(id,shop,carrier,qty){
+  document.getElementById('edit-session-id').value=id;
+  document.getElementById('edit-session-shop').value=shop;
+  const sel=document.getElementById('edit-session-carrier');
+  const custom=document.getElementById('edit-session-custom');
+  if(KNOWN_CARRIERS.includes(carrier)){sel.value=carrier;custom.style.display='none'}
+  else{sel.value='__custom__';custom.style.display='block';custom.value=carrier}
+  document.getElementById('edit-session-qty').value=qty;
+  document.getElementById('session-modal').classList.add('open');
+}
+function closeSessionModal(){document.getElementById('session-modal').classList.remove('open')}
+async function saveSessionEdit(){
+  const id=document.getElementById('edit-session-id').value;
+  const shop=document.getElementById('edit-session-shop').value.trim();
+  const carrier=getCarrier('edit-session-carrier','edit-session-custom');
+  const qty=parseInt(document.getElementById('edit-session-qty').value);
+  if(!shop||!qty){toast('กรุณากรอกให้ครบ');return}
+  const{error}=await sb.from('outbound_sessions').update({shop_name:shop,carrier,total_parcels:qty}).eq('id',id);
+  if(error){toast('เกิดข้อผิดพลาด');return}
+  toast('แก้ไขแล้ว ✓');closeSessionModal();renderHistory();renderDashboard();
+}
+async function deleteSession(id){
+  if(!confirm('ต้องการลบรายการส่งออกนี้ใช่มั้ย?'))return;
+  await sb.from('outbound_sessions').delete().eq('id',id);
+  toast('ลบแล้ว');renderHistory();renderDashboard();
+}
+
+// ── HISTORY (OUTBOUND) ────────────────────────────────────
+async function renderHistory(){
+  const fd=document.getElementById('ob-filter').value||today();
+  document.getElementById('ob-filter').value=fd;
+  const{data}=await sb.from('outbound_sessions').select('*').eq('session_date',fd).order('created_at',{ascending:false});
+  const list=data||[];
+  const byCarrier={};list.forEach(o=>{byCarrier[o.carrier]=(byCarrier[o.carrier]||0)+o.total_parcels});
+  const sumEl=document.getElementById('ob-summary-bar');
+  sumEl.innerHTML=Object.keys(byCarrier).length?`<div style="display:flex;flex-wrap:wrap;gap:8px">${Object.entries(byCarrier).map(([c,q])=>`<div class="carrier-pill-big">${carrierPill(c)}<span class="num">${q}</span><span class="unit">ชิ้น</span></div>`).join('')}</div>`:'';
+  document.getElementById('ob-empty').style.display=list.length?'none':'block';
+  document.getElementById('ob-tbody').innerHTML=list.map(o=>`<tr>
+    <td style="font-weight:500">${o.shop_name}</td>
+    <td>${carrierPill(o.carrier)}</td>
+    <td style="font-weight:600;cursor:pointer;color:var(--navy)" onclick="openSessionTrackingModal(['${o.id}'], null, null)">${o.total_parcels} ชิ้น <span style="font-size:10px;color:var(--gold3)">ดู</span></td>
+    <td style="color:#bbb;font-size:11px">${fmtDate(o.session_date)}</td>
+    <td style="white-space:nowrap">
+      <button class="btn btn-sm" onclick="editSession('${o.id}','${o.shop_name}','${o.carrier}',${o.total_parcels})" style="padding:3px 8px;font-size:11px">✏️</button>
+      <button class="btn btn-sm btn-danger" onclick="deleteSession('${o.id}')" style="padding:3px 8px;font-size:11px;margin-left:4px">🗑</button>
+    </td>
+  </tr>`).join('');
+}
+
+// ── DASHBOARD ─────────────────────────────────────────────
+async function renderDashboard(){
+  const td=today();
+  const{data:ss}=await sb.from('outbound_sessions').select('*').eq('session_date',td);
+  const sessions=ss||[];
+  const totalToday=sessions.reduce((a,o)=>a+o.total_parcels,0);
+  const waiting=tasks.filter(t=>t.status==='รอดำเนินการ').length;
+  const doing=tasks.filter(t=>t.status==='กำลังทำ').length;
+  document.getElementById('dash-metrics').innerHTML=`
+    <div class="metric"><div class="metric-icon">📋</div><div class="metric-label">งานทั้งหมด</div><div class="metric-value">${tasks.length}</div><div class="metric-sub">รายการ</div></div>
+    <div class="metric"><div class="metric-icon">🕐</div><div class="metric-label">รอดำเนินการ</div><div class="metric-value">${waiting}</div><div class="metric-sub">งาน</div></div>
+    <div class="metric"><div class="metric-icon">⚡</div><div class="metric-label">กำลังทำ</div><div class="metric-value">${doing}</div><div class="metric-sub">งาน</div></div>
+    <div class="metric"><div class="metric-icon">📦</div><div class="metric-label">ส่งออกวันนี้</div><div class="metric-value">${totalToday}</div><div class="metric-sub">ชิ้น</div></div>`;
+  const statuses=['รอดำเนินการ','กำลังทำ','เสร็จแล้ว'];
+  document.getElementById('dash-kanban').innerHTML=statuses.map(s=>{
+    const list=tasks.filter(t=>t.status===s);
+    return`<div class="k-col"><div class="k-head">${s}<span class="k-count">${list.length}</span></div>
+      ${list.slice(0,3).map(t=>`<div class="k-card" onclick="openTask('${t.id}')"><div class="k-name">${t.title}</div><div class="k-meta">${t.shop_name}${t.assigned_to?' · '+t.assigned_to:''}</div></div>`).join('')}
+      ${list.length>3?`<div style="font-size:11px;color:#bbb;text-align:center;padding:4px">+${list.length-3} รายการ</div>`:''}
+    </div>`;
+  }).join('');
+  const byCarrier={};sessions.forEach(o=>{byCarrier[o.carrier]=(byCarrier[o.carrier]||0)+o.total_parcels});
+  // group session ids by carrier
+  const carrierSessions={};sessions.forEach(o=>{if(!carrierSessions[o.carrier])carrierSessions[o.carrier]=[];carrierSessions[o.carrier].push(o.id);});
+  document.getElementById('dash-carrier').innerHTML=Object.keys(byCarrier).length
+    ?Object.entries(byCarrier).map(([c,q])=>`<div class="carrier-pill-big" style="cursor:pointer" onclick="openSessionTrackingModal(${JSON.stringify(carrierSessions[c]||[]).replace(/"/g,"'")}, '${c}', null)">${carrierPill(c)}<span class="num">${q}</span><span class="unit">ชิ้น</span><span style="font-size:10px;color:var(--gold3);margin-left:4px">ดู</span></div>`).join('')
+    :'<div style="color:#bbb;font-size:12px;padding:8px 0">ยังไม่มีข้อมูลวันนี้</div>';
+  const byShop={};sessions.forEach(o=>{byShop[o.shop_name]=(byShop[o.shop_name]||0)+o.total_parcels});
+  const maxQ=Math.max(...Object.values(byShop),1);
+  document.getElementById('dash-shops').innerHTML=Object.keys(byShop).length
+    ?Object.entries(byShop).sort((a,b)=>b[1]-a[1]).map(([shop,qty])=>{
+        const shopSids=sessions.filter(o=>o.shop_name===shop).map(o=>o.id);
+        return`<div class="shop-bar-item" style="cursor:pointer" onclick="openSessionTrackingModal(${JSON.stringify(shopSids).replace(/"/g,"'")}, null, '${shop}')">
+          <div class="shop-name">${shop}</div>
+          <div class="bar-wrap"><div class="bar-fill" style="width:${Math.round(qty/maxQ*100)}%"></div></div>
+          <div class="shop-num">${qty} ชิ้น <span style="font-size:10px;color:var(--gold3)">ดู</span></div>
+        </div>`;}).join('')
+    :'<div style="color:#bbb;font-size:12px;padding:8px 0">ยังไม่มีข้อมูลวันนี้</div>';
+}
+
+// ═══════════════════════════════════════════════════════
+// TRACKING PAGE LOGIC
+// ═══════════════════════════════════════════════════════
+
+// ดึง tracking items จาก outbound_items + sessions เพื่อ populate ประวัติ
+async function loadTrkHistory(){
+  const{data}=await sb.from('outbound_items')
+    .select('tracking_number, created_at, outbound_sessions(shop_name, carrier, session_date)')
+    .order('created_at',{ascending:false})
+    .limit(200);
+  return data||[];
+}
+
+function trkTab(name,btn){
+  ['search','history','notify'].forEach(t=>{
+    document.getElementById('trk-'+t).style.display=t===name?'':'none';
+  });
+  document.querySelectorAll('.trk-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  if(name==='history') renderTrkHistory();
+}
+
+// ── TRACK SEARCH ──────────────────────────────────────────
+async function doTrack(){
+  const raw=document.getElementById('trk-input').value.trim().toUpperCase();
+  const res=document.getElementById('trk-result');
+  const empty=document.getElementById('trk-empty');
+  if(!raw){toast('กรุณากรอก Tracking Number');return}
+  empty.style.display='none';
+  res.innerHTML=`<div class="card" style="text-align:center;padding:24px;color:#bbb;font-size:13px">⏳ กำลังค้นหา...</div>`;
+
+  // ค้นใน outbound_items
+  const{data:items}=await sb.from('outbound_items')
+    .select('*, outbound_sessions(shop_name,carrier,session_date)')
+    .ilike('tracking_number',`%${raw}%`)
+    .limit(5);
+
+  if(!items||!items.length){
+    res.innerHTML=`<div class="card" style="text-align:center;padding:36px 20px">
+      <div style="font-size:28px;margin-bottom:10px">🔍</div>
+      <div style="font-size:14px;font-weight:500;margin-bottom:4px">ไม่พบ Tracking Number</div>
+      <div style="font-size:12px;color:#bbb">${raw}</div>
+      <div style="font-size:12px;color:#bbb;margin-top:6px">ลองตรวจสอบตัวเลขอีกครั้ง หรือ tracking อาจยังไม่ได้บันทึกในระบบ</div>
+    </div>`;
+    return;
+  }
+
+  const item=items[0];
+  const session=item.outbound_sessions;
+  const carrier=session?.carrier||'—';
+  const shop=session?.shop_name||'—';
+  const sentDate=session?.session_date||item.created_at;
+
+  // สร้าง timeline จากข้อมูลจริง (วันที่บันทึกในระบบ)
+  const createdAt=new Date(item.created_at);
+  const sentAt=new Date(sentDate);
+  const fmtTH=(d)=>d.toLocaleDateString('th-TH',{day:'2-digit',month:'short',year:'2-digit'})+' · '+d.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'});
+
+  const timeline=[
+    {time:fmtTH(createdAt), label:'รับเข้าระบบแล้ว', desc:'สแกนเข้าระบบ The Fulfillment', type:'done'},
+    {time:fmtTH(sentAt),    label:'ส่งมอบให้ขนส่ง', desc:`ส่งให้ ${carrier} แล้ว`, type:'active'},
+  ];
+
+  const tlHTML=timeline.map((e,i)=>`
+    <div class="tl2-item">
+      ${i<timeline.length-1?'<div style="position:absolute;left:6px;top:18px;bottom:-4px;width:1px;background:rgba(184,160,122,.15)"></div>':''}
+      <div class="tl2-icon"><div class="tl2-dot tl2-${e.type}"></div></div>
+      <div class="tl2-body">
+        <div class="tl2-time">${e.time}</div>
+        <div class="tl2-label">${e.label}</div>
+        <div class="tl2-desc">${e.desc}</div>
+      </div>
+    </div>`).join('');
+
+  res.innerHTML=`
+    <div class="trk-result-card">
+      <div style="position:relative;z-index:1">
+        <div class="trk-num">${item.tracking_number}</div>
+        <div class="trk-shop-label">📦 ${shop}</div>
+        <div class="trk-meta-row">
+          ${carrierPill(carrier)}
+          <span class="trk-status trk-transit">
+            <span class="trk-sdot"></span>อยู่ระหว่างส่ง
+          </span>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="sec-label">เส้นทางพัสดุ</div>
+      <div class="trk-timeline" style="position:relative">${tlHTML}</div>
+      <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--cream2);font-size:12px;color:#aaa">
+        💡 สถานะ real-time เพิ่มเติมให้ตรวจสอบผ่านเว็บของขนส่งโดยตรง
+      </div>
+    </div>`;
+}
+
+// ── TRACKING HISTORY ──────────────────────────────────────
+async function renderTrkHistory(){
+  const q=(document.getElementById('hist-q')||{value:''}).value.toLowerCase();
+  const courier=(document.getElementById('hist-courier')||{value:''}).value;
+  const statusF=(document.getElementById('hist-status')||{value:''}).value;
+
+  const{data}=await sb.from('outbound_items')
+    .select('tracking_number, created_at, outbound_sessions(shop_name, carrier, session_date)')
+    .order('created_at',{ascending:false})
+    .limit(300);
+
+  let list=(data||[]).filter(d=>{
+    const c=d.outbound_sessions?.carrier||'';
+    const num=d.tracking_number.toLowerCase();
+    const shop=(d.outbound_sessions?.shop_name||'').toLowerCase();
+    return(!q||(num.includes(q)||shop.includes(q)))&&(!courier||c===courier);
+  });
+
+  const tbody=document.getElementById('trk-hist-tbody');
+  const empty=document.getElementById('trk-hist-empty');
+  empty.style.display=list.length?'none':'block';
+  tbody.innerHTML=list.map(d=>{
+    const c=d.outbound_sessions?.carrier||'—';
+    const shop=d.outbound_sessions?.shop_name||'—';
+    const date=d.outbound_sessions?.session_date||d.created_at;
+    return`<tr>
+      <td style="font-weight:600;font-size:13px;font-family:'Playfair Display',serif">${d.tracking_number}</td>
+      <td>${carrierPill(c)}</td>
+      <td style="font-weight:500">${shop}</td>
+      <td><span class="sts sts-transit">อยู่ระหว่างส่ง</span></td>
+      <td style="color:#bbb;font-size:11px">${fmtDate(date)}</td>
+      <td><button class="btn btn-sm" onclick="quickViewTracking('${d.tracking_number}')">ดู Timeline</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function quickViewTracking(num){
+  document.getElementById('trk-input').value=num;
+  trkTab('search',document.querySelectorAll('.trk-tab')[0]);
+  doTrack();
+}
+
+
+// ── SESSION TRACKING MODAL ────────────────────────────────
+async function openSessionTrackingModal(sessionIds, carrier, shop) {
+  document.getElementById('session-trk-modal').classList.add('open');
+  const title = carrier ? carrier + ' — Tracking วันนี้' : shop ? shop + ' — Tracking วันนี้' : 'รายการ Tracking';
+  document.getElementById('session-trk-title').textContent = title;
+  document.getElementById('session-trk-sub').textContent = 'กำลังโหลด...';
+  document.getElementById('session-trk-body').innerHTML = '<div style="text-align:center;padding:20px;color:#bbb;font-size:13px">⏳ กำลังโหลด...</div>';
+
+  // fetch all items for these session ids
+  const {data} = await sb.from('outbound_items')
+    .select('tracking_number, outbound_sessions(shop_name, carrier, session_date)')
+    .in('session_id', sessionIds)
+    .order('created_at', {ascending: true});
+
+  const items = data || [];
+  document.getElementById('session-trk-sub').textContent = items.length + ' รายการ';
+
+  if (!items.length) {
+    document.getElementById('session-trk-body').innerHTML = '<div style="text-align:center;padding:20px;color:#bbb;font-size:13px">ไม่พบข้อมูล Tracking</div>';
+    return;
+  }
+
+  document.getElementById('session-trk-body').innerHTML = `
+    <div style="margin-bottom:12px;display:flex;align-items:center;justify-content:space-between">
+      <span style="font-size:12px;color:#999">รวม ${items.length} ชิ้น</span>
+      <button class="btn btn-sm" onclick="copyAllTracking()" style="font-size:11px">📋 คัดลอกทั้งหมด</button>
+    </div>
+    <div id="session-trk-list">
+      ${items.map((item, i) => `
+        <div class="trk-list-item">
+          <span class="trk-list-idx">${i+1}</span>
+          <span class="trk-list-num">${item.tracking_number}</span>
+          <button class="btn btn-sm" onclick="navigator.clipboard.writeText('${item.tracking_number}').then(()=>toast('คัดลอกแล้ว ✓'))" style="font-size:11px;padding:3px 8px">คัดลอก</button>
+        </div>`).join('')}
+    </div>`;
+
+  // store for copy all
+  window._trkModalItems = items.map(i => i.tracking_number);
+}
+
+function copyAllTracking() {
+  const all = (window._trkModalItems || []).join('\n');
+  navigator.clipboard.writeText(all).then(() => toast('คัดลอกทั้งหมด ' + (window._trkModalItems||[]).length + ' รายการ ✓'));
+}
+
+function closeSessionTrkModal() {
+  document.getElementById('session-trk-modal').classList.remove('open');
+  window._trkModalItems = [];
+}
+
+// ── REALTIME ──────────────────────────────────────────────
+sb.channel('realtime-all')
+  .on('postgres_changes',{event:'*',schema:'public',table:'tasks'},()=>loadTasks())
+  .on('postgres_changes',{event:'*',schema:'public',table:'outbound_sessions'},()=>{renderDashboard();renderHistory()})
+  .subscribe();
+
+// ── INIT ──────────────────────────────────────────────────
+document.getElementById('ob-date').value=today();
+document.getElementById('ob-filter').value=today();
+loadTasks();
+renderHistory();
+
+// ═══════════════════════════════════════════════════════
+// สินค้าตีกลับ LOGIC
+// ═══════════════════════════════════════════════════════
+
+let currentReturnId = null;
+
+// showPage extension for returns
+const _origShowPage = showPage;
+// override showPage to handle returns tab
+function showPage(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  btn.classList.add('active');
+  if (id === 'dashboard') renderDashboard();
+  if (id === 'tasks') renderTasks();
+  if (id === 'outbound') { renderHistory(); setTimeout(() => document.getElementById('scan-input').focus(), 100); }
+  if (id === 'returns') { renderReturns(); renderRetMetrics(); }
+}
+
+function retStatusClass(s) {
+  if (s === 'รอรับสินค้า') return 'sts-return-wait';
+  if (s === 'รับสินค้าแล้ว') return 'sts-return-recv';
+  if (s === 'ตรวจสอบแล้ว') return 'sts-return-check';
+  if (s === 'ดำเนินการแล้ว') return 'sts-return-done';
+  return 'sts-return-wait';
+}
+
+function parseVideoUrl(url) {
+  if (!url) return null;
+  // YouTube
+  const yt = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+  if (yt) return { type: 'youtube', id: yt[1] };
+  // TikTok
+  if (url.includes('tiktok.com')) return { type: 'link', url };
+  // Facebook
+  if (url.includes('facebook.com') || url.includes('fb.watch')) return { type: 'link', url };
+  // Google Drive
+  const gd = url.match(/drive\.google\.com\/file\/d\/([^/]+)/);
+  if (gd) return { type: 'gdrive', id: gd[1] };
+  // Direct mp4
+  if (url.match(/\.(mp4|webm|ogg)(\?|$)/i)) return { type: 'mp4', url };
+  // fallback link
+  if (url.startsWith('http')) return { type: 'link', url };
+  return null;
+}
+
+function videoHtml(url) {
+  const v = parseVideoUrl(url);
+  if (!v) return '';
+  if (v.type === 'youtube') return `<div class="ret-video-thumb"><iframe src="https://www.youtube.com/embed/${v.id}" allowfullscreen></iframe></div>`;
+  if (v.type === 'gdrive') return `<div class="ret-video-thumb"><iframe src="https://drive.google.com/file/d/${v.id}/preview" allowfullscreen></iframe></div>`;
+  if (v.type === 'mp4') return `<div class="ret-video-thumb"><video controls src="${v.url}"></video></div>`;
+  return `<div style="margin-top:8px"><a class="ret-video-link" href="${v.url}" target="_blank">&#x1F3A5; ดูวิดีโอหลักฐาน</a></div>`;
+}
+
+// ── TAG HELPERS ──────────────────────────────────────────
+function handleTagInput(e, wrapId, inputId) {
+  if (e.key === 'Enter' || e.key === ',') {
+    e.preventDefault();
+    const input = document.getElementById(inputId);
+    const val = input.value.trim().replace(/,$/,'');
+    if (val) addTagToWrap(wrapId, inputId, val);
+    input.value = '';
+  } else if (e.key === 'Backspace') {
+    const input = document.getElementById(inputId);
+    if (!input.value) {
+      const wrap = document.getElementById(wrapId);
+      const pills = wrap.querySelectorAll('.tag-pill');
+      if (pills.length) pills[pills.length-1].remove();
+    }
+  }
+}
+function addTagToWrap(wrapId, inputId, val) {
+  const wrap = document.getElementById(wrapId);
+  const input = document.getElementById(inputId);
+  const pill = document.createElement('span');
+  pill.className = 'tag-pill';
+  pill.innerHTML = val + '<button class="tag-pill-rm" onclick="this.parentElement.remove()" type="button">✕</button>';
+  wrap.insertBefore(pill, input);
+}
+function getTagsFromWrap(wrapId) {
+  const wrap = document.getElementById(wrapId);
+  return Array.from(wrap.querySelectorAll('.tag-pill')).map(p => p.textContent.replace('✕','').trim());
+}
+function setTagsToWrap(wrapId, inputId, tags) {
+  const wrap = document.getElementById(wrapId);
+  wrap.querySelectorAll('.tag-pill').forEach(p => p.remove());
+  (tags || []).forEach(t => addTagToWrap(wrapId, inputId, t));
+}
+
+async function addReturn() {
+  const tracking = document.getElementById('ret-tracking').value.trim().toUpperCase();
+  const shop = document.getElementById('ret-shop').value.trim();
+  const carrier = document.getElementById('ret-carrier').value;
+  const reason = document.getElementById('ret-reason').value;
+  const status = document.getElementById('ret-status').value;
+  const note = document.getElementById('ret-note').value.trim();
+  const videoUrl = document.getElementById('ret-video-url').value.trim();
+  const tags = getTagsFromWrap('ret-tags-wrap');
+  const arrivedDate = document.getElementById('ret-arrived-date').value || today();
+  if (!tracking || !shop) { toast('กรุณากรอกเลข Tracking และร้านค้า'); return; }
+  const { error } = await sb.from('returns').insert({
+    tracking_number: tracking, shop_name: shop, carrier, reason, status, note,
+    video_url: videoUrl || null, tags: tags, arrived_date: arrivedDate
+  });
+  if (error) { toast('เกิดข้อผิดพลาด: ' + error.message); return; }
+  ['ret-tracking','ret-shop','ret-note','ret-video-url'].forEach(id => document.getElementById(id).value = '');
+  setTagsToWrap('ret-tags-wrap','ret-tag-input',[]);
+  document.getElementById('ret-status').value = 'รอรับสินค้า';
+  document.getElementById('ret-arrived-date').value = today();
+  toast('บันทึกสินค้าตีกลับแล้ว ✓');
+  renderReturns(); renderRetMetrics(); updateReturnBadge();
+}
+
+async function renderReturns() {
+  const q = (document.getElementById('ret-search') || {value:''}).value.toLowerCase();
+  const statusF = (document.getElementById('ret-filter-status') || {value:''}).value;
+  const { data } = await sb.from('returns').select('*').order('created_at', { ascending: false });
+  let list = (data || []).filter(r =>
+    (!q || r.tracking_number.toLowerCase().includes(q) || (r.shop_name||'').toLowerCase().includes(q)) &&
+    (!statusF || r.status === statusF)
+  );
+  const el = document.getElementById('ret-list');
+  const empty = document.getElementById('ret-empty');
+  empty.style.display = list.length ? 'none' : 'block';
+  el.innerHTML = list.map(r => `
+    <div class="ret-card" onclick="openReturn('${r.id}')">
+      <div class="ret-card-header">
+        <div>
+          <div class="ret-card-num">${r.tracking_number}</div>
+          <div class="ret-card-meta">
+            ${carrierPill(r.carrier)}
+            <span>${r.shop_name}</span>
+            <span style="color:#ccc">|</span>
+            <span>${r.reason}</span>
+          </div>
+        </div>
+        <span class="sts ${retStatusClass(r.status)}">${r.status}</span>
+      </div>
+      ${r.note ? `<div class="ret-card-body">${r.note}</div>` : ''}
+      ${(r.tags && r.tags.length) ? `<div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:8px">${r.tags.map(t=>`<span class="tag-pill">${t}</span>`).join('')}</div>` : ''}
+      ${r.video_url ? videoHtml(r.video_url) : ''}
+      <div class="ret-card-footer" style="margin-top:8px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        ${r.arrived_date ? `<span style="font-size:11px;color:var(--gold3);font-weight:500">📅 รับกลับคลัง: ${fmtDate(r.arrived_date)}</span>` : ''}
+        <span style="font-size:11px;color:#bbb">บันทึก: ${fmtDate(r.created_at)}</span>
+        <span style="font-size:11px;color:#bbb;margin-left:auto">คลิกเพื่อแก้ไข →</span>
+      </div>
+    </div>`).join('');
+}
+
+async function renderRetMetrics() {
+  const { data } = await sb.from('returns').select('status');
+  const list = data || [];
+  const total = list.length;
+  const waiting = list.filter(r => r.status === 'รอรับสินค้า').length;
+  const recv = list.filter(r => r.status === 'รับสินค้าแล้ว').length;
+  const done = list.filter(r => r.status === 'ดำเนินการแล้ว').length;
+  document.getElementById('ret-metrics').innerHTML = `
+    <div class="metric"><div class="metric-icon">&#x1F4E6;</div><div class="metric-label">ทั้งหมด</div><div class="metric-value">${total}</div><div class="metric-sub">รายการ</div></div>
+    <div class="metric"><div class="metric-icon">&#x23F3;</div><div class="metric-label">รอรับสินค้า</div><div class="metric-value">${waiting}</div><div class="metric-sub">รายการ</div></div>
+    <div class="metric"><div class="metric-icon">&#x2705;</div><div class="metric-label">รับแล้ว</div><div class="metric-value">${recv}</div><div class="metric-sub">รายการ</div></div>
+    <div class="metric"><div class="metric-icon">&#x1F3C1;</div><div class="metric-label">ดำเนินการแล้ว</div><div class="metric-value">${done}</div><div class="metric-sub">รายการ</div></div>`;
+}
+
+async function updateReturnBadge() {
+  const { data } = await sb.from('returns').select('status');
+  const n = (data||[]).filter(r => r.status === 'รอรับสินค้า' || r.status === 'รับสินค้าแล้ว').length;
+  const b = document.getElementById('return-badge');
+  b.style.display = n ? 'inline-flex' : 'none'; b.textContent = n;
+}
+
+async function openReturn(id) {
+  currentReturnId = id;
+  const { data } = await sb.from('returns').select('*').eq('id', id).single();
+  if (!data) return;
+  document.getElementById('ret-modal-title').textContent = data.tracking_number;
+  document.getElementById('ret-modal-sub').textContent = data.shop_name + ' · ' + data.carrier;
+  document.getElementById('ret-edit-tracking').value = data.tracking_number;
+  document.getElementById('ret-edit-shop').value = data.shop_name || '';
+  document.getElementById('ret-edit-carrier').value = data.carrier || 'Flash';
+  document.getElementById('ret-edit-reason').value = data.reason || 'ไม่มีผู้รับ';
+  document.getElementById('ret-edit-status').value = data.status || 'รอรับสินค้า';
+  document.getElementById('ret-edit-note').value = data.note || '';
+  document.getElementById('ret-edit-video').value = data.video_url || '';
+  document.getElementById('ret-edit-arrived-date').value = data.arrived_date || today();
+  setTagsToWrap('ret-edit-tags-wrap','ret-edit-tag-input', data.tags || []);
+  // show video preview
+  const prev = document.getElementById('ret-video-preview');
+  prev.innerHTML = data.video_url ? videoHtml(data.video_url) : '';
+  // update preview on input
+  document.getElementById('ret-edit-video').oninput = function() {
+    prev.innerHTML = this.value ? videoHtml(this.value) : '';
+  };
+  await loadReturnUpdates(id);
+  document.getElementById('return-modal').classList.add('open');
+}
+
+function closeReturnModal() { document.getElementById('return-modal').classList.remove('open'); currentReturnId = null; }
+
+async function saveReturnEdit() {
+  if (!currentReturnId) return;
+  const { error } = await sb.from('returns').update({
+    tracking_number: document.getElementById('ret-edit-tracking').value.trim().toUpperCase(),
+    shop_name: document.getElementById('ret-edit-shop').value.trim(),
+    carrier: document.getElementById('ret-edit-carrier').value,
+    reason: document.getElementById('ret-edit-reason').value,
+    status: document.getElementById('ret-edit-status').value,
+    note: document.getElementById('ret-edit-note').value.trim(),
+    video_url: document.getElementById('ret-edit-video').value.trim() || null,
+    tags: getTagsFromWrap('ret-edit-tags-wrap'),
+    arrived_date: document.getElementById('ret-edit-arrived-date').value || today(),
+  }).eq('id', currentReturnId);
+  if (error) { toast('เกิดข้อผิดพลาด'); return; }
+  toast('บันทึกแล้ว ✓'); closeReturnModal(); renderReturns(); renderRetMetrics(); updateReturnBadge();
+}
+
+async function deleteReturn() {
+  if (!currentReturnId) return;
+  if (!confirm('ต้องการลบรายการนี้ใช่มั้ย?')) return;
+  await sb.from('returns').delete().eq('id', currentReturnId);
+  toast('ลบแล้ว'); closeReturnModal(); renderReturns(); renderRetMetrics(); updateReturnBadge();
+}
+
+async function loadReturnUpdates(retId) {
+  const { data } = await sb.from('return_updates').select('*').eq('return_id', retId).order('created_at', { ascending: true });
+  const el = document.getElementById('ret-modal-updates');
+  if (!data || !data.length) { el.innerHTML = '<div style="color:#bbb;font-size:12px">ยังไม่มีการอัปเดต</div>'; return; }
+  el.innerHTML = data.map(u => `
+    <div class="log-item">
+      <div class="log-dot"></div>
+      <div>
+        <div class="log-note">${u.note}</div>
+        <div class="log-time">${fmtDate(u.created_at)} ${fmtTime(u.created_at)}</div>
+      </div>
+    </div>`).join('');
+}
+
+async function addReturnUpdate() {
+  if (!currentReturnId) return;
+  const note = document.getElementById('ret-update-note').value.trim();
+  if (!note) { toast('กรุณากรอกข้อความ'); return; }
+  await sb.from('return_updates').insert({ return_id: currentReturnId, note });
+  document.getElementById('ret-update-note').value = '';
+  await loadReturnUpdates(currentReturnId); toast('บันทึกอัปเดตแล้ว ✓');
+}
+
+// realtime for returns
+sb.channel('realtime-returns')
+  .on('postgres_changes', { event: '*', schema: 'public', table: 'returns' }, () => { renderReturns(); renderRetMetrics(); updateReturnBadge(); })
+  .subscribe();
+
+// init badge on load
+updateReturnBadge();
+// set default arrived date to today
+document.addEventListener('DOMContentLoaded', () => {
+  const d = document.getElementById('ret-arrived-date');
+  if (d) d.value = today();
+});
+
+</script>
+</body>
+</html>
